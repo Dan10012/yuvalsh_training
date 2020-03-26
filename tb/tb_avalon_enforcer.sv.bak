@@ -57,7 +57,7 @@ module avalon_enforcer_tb();
 		untrusted_msg.eop = 1'b0;
 		untrusted_msg.data = 0;
 		untrusted_msg.empty = 0;
-		trusted_msg.rdy = 1'b0;
+		trusted_msg.rdy = 1'0;
 
 		#50;
 		rst 				= 1'b1;
