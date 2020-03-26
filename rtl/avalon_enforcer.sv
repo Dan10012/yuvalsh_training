@@ -92,7 +92,7 @@ always_comb begin
 		trusted_msg.eop = untrusted_msg.eop;
 		trusted_msg.empty = untrusted_msg.empty & trusted_msg.eop;
 		trusted_msg.data = untrusted_msg.data;
-		trusted_msg.valid = untrusted_msg;
+		trusted_msg.valid = untrusted_msg.valid;
 	end
  
 end

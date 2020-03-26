@@ -57,7 +57,7 @@ module avalon_enforcer_tb();
 		untrusted_msg.eop = 1'b0;
 		untrusted_msg.data = 0;
 		untrusted_msg.empty = 0;
-		trusted_msg.rdy = 1'b0;
+		trusted_msg.rdy = 1'b1;
 
 		#50;
 		rst 				= 1'b1;
@@ -75,11 +75,11 @@ module avalon_enforcer_tb();
 		@(posedge clk);
 		untrusted_msg.eop = '1;
 		@(posedge clk);
-		trusted_msg.valid = 1'b0;
-		trusted_msg.sop = 1'b0;
-		trusted_msg.eop = 1'b0;
-		trusted_msg.data = '0;
-		trusted_msg.empty = 0;
+		untrusted_msg.valid = 1'b0;
+		untrusted_msg.sop = 1'b0;
+		untrusted_msg.eop = 1'b0;
+		untrusted_msg.data = '0;
+		untrusted_msg.empty = 0;
 
 		#15;
 

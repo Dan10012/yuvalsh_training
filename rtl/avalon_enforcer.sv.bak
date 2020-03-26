@@ -28,7 +28,6 @@ module avalon_enforcer
 
 	avalon_st_if.master  	trusted_msg, 
 	avalon_st_if.slave 		untrusted_msg,
-	logic					save_data,
 
 	output logic packet_didnt_started,
 	output logic packet_in_packet
@@ -39,7 +38,7 @@ import enforcer_pack::*;
 
 enforcer_sm_t    current_state;
 
-
+logic					save_data = 1'b0;
 assign 	untrusted_msg.rdy = trusted_msg.rdy; // setting up the untrusted rdy for the sm
 
 
@@ -81,7 +80,7 @@ always_comb begin
 	end
 end
 
-always_comb begin
+always begin
 
 	unique if(save_data == 0) begin // situation of throwing up the data
 		trusted_msg.eop   = 1'b0;
@@ -93,7 +92,7 @@ always_comb begin
 		trusted_msg.eop = untrusted_msg.eop;
 		trusted_msg.empty = untrusted_msg.empty & trusted_msg.eop;
 		trusted_msg.data = untrusted_msg.data;
-		trusted_msg.valid = untrusted_msg;
+		trusted_msg.valid = untrusted_msg.valid;
 	end
  
 end
