@@ -30,8 +30,8 @@ module avalon_enforcer_tb();
 	avalon_st_if #(.DATA_WIDTH_IN_BYTES(DATA_WIDTH_IN_BYTES)) trusted_msg();
 
 
-	logic packet_didnt_started;
-	logic packet_in_packet;
+	logic packet_didnt_started; 
+	logic packet_in_packet; 
 
 	avalon_enforcer #(
 		

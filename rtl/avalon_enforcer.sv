@@ -29,20 +29,27 @@ module avalon_enforcer
 	avalon_st_if.master  	trusted_msg, 
 	avalon_st_if.slave 		untrusted_msg,
 
-	output logic packet_didnt_started,
-	output logic packet_in_packet
-	
+	output logic packet_didnt_started, // this indicats thats that a data has sent witho a valud sop.
+	output logic packet_in_packet // this indicate that a couple of valid sops has sent without a valid eop in the middle.	
 );
+ 
+
 
 import enforcer_pack::*;
 
-enforcer_sm_t    current_state;
 
+
+
+enforcer_sm_t    current_state;
 logic					save_data = 1'b0;
+
+
 assign 	untrusted_msg.rdy = trusted_msg.rdy; // setting up the untrusted rdy for the sm
 
 
-always_ff @(posedge clk or negedge rst) begin
+
+//this handles the state_machine moudle
+always_ff @(posedge clk or negedge rst) begin : state_machine_logic
 	if(~rst) begin
 		current_state <= WAIT_FOR_SOP;
 	end else begin
@@ -63,7 +70,8 @@ end
 
 
 
-always_comb begin
+// this process handles the outpus of the sm_signals 
+always_comb begin : state_machine_outpus_combinational_logic
 
 
 	unique if(current_state == WAIT_FOR_SOP) begin
@@ -80,7 +88,9 @@ always_comb begin
 	end
 end
 
-always_comb begin
+
+// this process setting the valuse of to the "outputs" of the enforcer
+always_comb begin : enforcer_outputs_combinational_logic
 
 	unique if(save_data == 0) begin // situation of throwing up the data
 		trusted_msg.eop   = 1'b0;
