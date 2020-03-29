@@ -53,7 +53,7 @@ typedef enum logic { // setting up the sm states
 //// Declarations ////////////////////////
 //////////////////////////////////////////
 enforcer_sm_t    		current_state; //the sm
-logic					save_data = 1'b0; // have the responsibility to save or throw the data according to the sm
+logic					save_data; // have the responsibility to save or throw the data according to the sm
 
 
 //////////////////////////////////////////
