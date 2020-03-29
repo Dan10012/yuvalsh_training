@@ -97,7 +97,7 @@ always_comb begin : state_machine_outpus_combinational_logic
 		packet_in_packet 		= untrusted_msg.sop & untrusted_msg.valid; // when we got a valid eop it will rise up the inidctio of the eror
 		packet_didnt_started 	= 0; // this indication will be always down because th packet has already started and now the moudle wit for the eop
 		trusted_msg.sop 		= 0;// the output sop will be always down because if the module get a valid up he will revert it
-		save_data 				= 1; // because the packet didnt staret indication is down' we keep the data as it is and dont throwing it awat
+		save_data 				= untrusted_msg.valid; // because when the packet_didnt_started is down we will never want to throw any valid data.
 	end
 end
 
