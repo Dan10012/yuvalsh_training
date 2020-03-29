@@ -40,8 +40,16 @@ import enforcer_pack::*;
 
 
 
-enforcer_sm_t    current_state;
-logic					save_data = 1'b0;
+typedef enum { // setting up the sm states
+	WAIT_FOR_SOP,
+	WAIT_FOR_EOP
+} enforcer_sm_t;
+
+
+
+
+enforcer_sm_t    		current_state; //the sm
+logic					save_data = 1'b0; // have the responsibility to save or throw the data according to the sm
 
 
 assign 	untrusted_msg.rdy = trusted_msg.rdy; // setting up the untrusted rdy for the sm
@@ -72,39 +80,37 @@ end
 
 // this process handles the outpus of the sm_signals 
 always_comb begin : state_machine_outpus_combinational_logic
-
-
 	unique if(current_state == WAIT_FOR_SOP) begin
-		packet_in_packet = 0;
-		packet_didnt_started =  !untrusted_msg.sop & untrusted_msg.valid; // when we dont got valid sop it will rise up the indication of the eror
-		trusted_msg.sop = untrusted_msg.sop & untrusted_msg.valid; 
-		save_data = untrusted_msg.sop & untrusted_msg.valid; // to make sure we  dint save the data if it out of packet
+		packet_in_packet 		= 0;
+		packet_didnt_started 	=  !untrusted_msg.sop & untrusted_msg.valid; // when we dont got valid sop it will rise up the indication of the eror
+		trusted_msg.sop 		= untrusted_msg.sop & untrusted_msg.valid; // the ouput sop
+		save_data 				= untrusted_msg.sop & untrusted_msg.valid; // to make sure we  dont save the data because the packent hasent started is up
 	end
 	else if(current_state == WAIT_FOR_EOP) begin
-		packet_in_packet = untrusted_msg.sop & untrusted_msg.valid; // when we got a valid eop it will rise up the inidctio of the eror
-		packet_didnt_started = 0;
-		trusted_msg.sop = 0;
-		save_data = 1;
+		packet_in_packet 		= untrusted_msg.sop & untrusted_msg.valid; // when we got a valid eop it will rise up the inidctio of the eror
+		packet_didnt_started 	= 0; 
+		trusted_msg.sop 		= 0;// the output sop 
+		save_data 				= 1; // because the packet didnt staret indication is down' we keep the data as it is and dont throwing it awat
 	end
 end
 
 
 // this process setting the valuse of to the "outputs" of the enforcer
 always_comb begin : enforcer_outputs_combinational_logic
-
-	unique if(save_data == 0) begin // situation of throwing up the data
-		trusted_msg.eop   = 1'b0;
-		trusted_msg.empty = 0;
-		trusted_msg.data  = '0;
-		trusted_msg.valid = 1'b0;
+	// translate the output of the sm to the whole module, when the sm ordering on throwing data(packet_didnt started up) you "throw the data"
+	unique if(save_data == 0) begin 
+		trusted_msg.eop   	= 1'b0;
+		trusted_msg.empty 	= 0;
+		trusted_msg.data  	= '0;
+		trusted_msg.valid 	= 1'b0;
 	end
-	else if(save_data == 1)begin // keeping the data
-		trusted_msg.eop = untrusted_msg.eop;
-		trusted_msg.empty = untrusted_msg.empty & trusted_msg.eop;
-		trusted_msg.data = untrusted_msg.data;
-		trusted_msg.valid = untrusted_msg.valid;
-	end
- 
+	// the other option of the sm outpus that means to save the data as is(in cade the packet hasnt started is dwon)
+	else if(save_data == 1)begin 
+		trusted_msg.eop 	= untrusted_msg.eop;
+		trusted_msg.empty 	= untrusted_msg.empty & trusted_msg.eop;
+		trusted_msg.data 	= untrusted_msg.data;
+		trusted_msg.valid 	= untrusted_msg.valid;
+	end 
 end
 
 endmodule
