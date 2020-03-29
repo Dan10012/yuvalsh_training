@@ -59,22 +59,31 @@ module avalon_enforcer_tb();
 		untrusted_msg.empty = 0;
 		trusted_msg.rdy = 1'b1;
 
-		#50;
+		#50
 		rst 				= 1'b1;
-		//lane_in = untrusted_msg
 
+// starting a msg that get a couple of valid sop's and a non valid eop after
 
 		@(posedge clk);
-		untrusted_msg.valid 		= 1'b1;
+		#0
+		rst 					= 1'b0;
+		untrusted_msg.valid 	= 1'b1;
 		untrusted_msg.data 		= {DATA_WIDTH_IN_BYTES{8'd34}};
 		untrusted_msg.sop 		= 1'b1;
 		@(posedge clk);
 		@(posedge clk);
-		untrusted_msg.sop = 1'b0;
+		#0
+		untrusted_msg.sop = 1'b1;
 		@(posedge clk);
+		#0
+		untrusted_msg.sop = 1'b1;
+		untrusted_msg.valid 	= 1'b0;
 		@(posedge clk);
-		untrusted_msg.eop = '1;
+		#0
+		untrusted_msg.eop = 1'b1;
+		untrusted_msg.valid 	= 1'b1;
 		@(posedge clk);
+		#0
 		untrusted_msg.valid = 1'b0;
 		untrusted_msg.sop = 1'b0;
 		untrusted_msg.eop = 1'b0;
@@ -82,9 +91,61 @@ module avalon_enforcer_tb();
 		untrusted_msg.empty = 0;
 
 		#15;
+//end of msg
 
-		$finish();
+// statrt of msg that has bigger data but run smoothly
 
+		@(posedge clk);
+		#0
+		rst 					= 1'b1;
+		untrusted_msg.valid 	= 1'b1;
+		untrusted_msg.data 		= {DATA_WIDTH_IN_BYTES{8'd34}};
+		untrusted_msg.sop 		= 1'b1;
+		@(posedge clk);
+		@(posedge clk);
+		#0
+		untrusted_msg.sop = 1'b0;
+		@(posedge clk);
+		@(posedge clk);
+		#0
+		untrusted_msg.eop = 1'b1;
+		@(posedge clk);
+		#0
+		untrusted_msg.valid = 1'b0;
+		untrusted_msg.sop = 1'b0;
+		untrusted_msg.eop = 1'b0;
+		untrusted_msg.data = '0;
+		untrusted_msg.empty = 0;
+
+		#15;
+//end of mesaage
+
+// statrt of msg thae valid is droping in the middle
+
+		@(posedge clk);
+		#0
+		untrusted_msg.valid 	= 1'b1;
+		untrusted_msg.data 		= {DATA_WIDTH_IN_BYTES{8'd34}};
+		untrusted_msg.sop 		= 1'b1;
+		@(posedge clk);
+		@(posedge clk);
+		#0
+		untrusted_msg.sop = 1'b0;
+		@(posedge clk);
+		untrusted_msg.valid = 1'b0;
+		@(posedge clk);
+		#0
+		untrusted_msg.eop = 1'b1;
+		@(posedge clk);
+		#0
+		untrusted_msg.valid = 1'b0;
+		untrusted_msg.sop = 1'b0;
+		untrusted_msg.eop = 1'b0;
+		untrusted_msg.data = '0;
+		untrusted_msg.empty = 0;
+
+		#15;
+//end of mesaage
 	end
 
 endmodule
