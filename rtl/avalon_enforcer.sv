@@ -40,7 +40,7 @@ import enforcer_pack::*;
 
 
 
-typedef enum { // setting up the sm states
+typedef enum logic { // setting up the sm states
 	WAIT_FOR_SOP,
 	WAIT_FOR_EOP
 } enforcer_sm_t;
