@@ -146,6 +146,34 @@ module avalon_enforcer_tb();
 
 		#15;
 //end of mesaage
+
+// statrt of msg that rdy is down
+
+		@(posedge clk);
+		#0
+		trusted_msg.rdy 		= 1'b0;
+		untrusted_msg.valid 	= 1'b1;
+		untrusted_msg.data 		= {DATA_WIDTH_IN_BYTES{8'd45}};
+		untrusted_msg.sop 		= 1'b1;
+		@(posedge clk);
+		@(posedge clk);
+		#0
+		untrusted_msg.sop = 1'b1;
+		@(posedge clk);
+		untrusted_msg.sop = 1'b0;
+		@(posedge clk);
+		#0
+		untrusted_msg.eop = 1'b1;
+		@(posedge clk);
+		#0
+		untrusted_msg.valid = 1'b0;
+		untrusted_msg.sop = 1'b0;
+		untrusted_msg.eop = 1'b0;
+		untrusted_msg.data = '0;
+		untrusted_msg.empty = 0;
+
+		#15;
+//end of mesaage
 	end
 
 endmodule
