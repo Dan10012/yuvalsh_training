@@ -1,7 +1,7 @@
 package aes_model_pack;
     /*-- Parameters --------------------------------*/
 
-	// ----- Add your parameters here ------------- //
+	parameter DATA_WIDTH_IN_BYTES = 16 
     
     /*-- Tables ------------------------------------*/
     // Sub Bytes.

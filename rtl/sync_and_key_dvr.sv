@@ -20,7 +20,7 @@
 
 import general_pack::*;
 
-interface dvr_st_if #(parameter DATA_WIDTH_IN_BYTES = 16);
+interface dvr_key_if #(parameter DATA_WIDTH_IN_BYTES = 16);
 	logic 	[(DATA_WIDTH_IN_BYTES*$bits(byte)) - 1 : 0] key;
 	logic 	[(DATA_WIDTH_IN_BYTES*$bits(byte)) - 1 : 0] sync;
 	logic 												valid;
