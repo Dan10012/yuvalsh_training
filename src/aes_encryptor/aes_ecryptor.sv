@@ -1,4 +1,4 @@
-//////////////////////////////////////////////////////////////////
+i//////////////////////////////////////////////////////////////////
 ///
 /// Project Name: 	aes_encryptor
 ///
@@ -14,7 +14,7 @@
 ///
 //////////////////////////////////////////////////////////////////
 ///
-/// Description: 	this file is the main file of a model that encrypted avalon_st msg in aes method.
+/// Description: 	this file is the main file of a model that encrypting avalon_st msg in aes method.
 ///
 //////////////////////////////////////////////////////////////////
 
@@ -58,8 +58,9 @@ typedef enum logic { // setting up the sm states
 aes_encryptor_sm_t    									current_state; //the sm
 logic 													deliver_msg; // signals that control whether to deliver the msg on or not(depdent on whtever encrypted or not)
 int 													counter;
-logic 	[(DATA_WIDTH_IN_BYTES*$bits(byte)) - 1 : 0] 	msg_key;
-logic 	[(DATA_WIDTH_IN_BYTES*$bits(byte)) - 1 : 0] 	msg_sync;
+logic 	[(DATA_WIDTH_IN_BYTES*$bits(byte)) - 1 : 0] 	msg_key,round_key;
+logic 	[(DATA_WIDTH_IN_BYTES*$bits(byte)) - 1 : 0] 	msg_sync,round_sync, encrypted_block; 
+logic 	[(DATA_WIDTH_IN_BYTES*$bits(byte)) - 1 : 0] 	sasb,sasr,samc; // three help signals that represnt the sync after all the encrypting levels in round
 logic 	[3 : 0] [$bits(byte) - 1 : 0]					key_rcon;
 //////////////////////////////////////////
 //// Logic ///////////////////////////////
@@ -95,7 +96,7 @@ always_ff @(posedge clk or negedge rst) begin : state_machine_logic
 end
 
 // this process handles the outpus of the sm_signals 
-always_ff begin : state_machine_outpus_sequintional_logic
+always_ff @(posedge clk ) begin : state_machine_outpus_sequintional_logic
 	unique if(current_state == WAIT_FOR_KEY_AND_SYNC) begin //when the module iwaiting for sync sn key he will shout down msg transefrecy and the rdy for key and sync will be up
 		key_and_sync.rdy 	<= 1;
 		counter 			<= 0;
@@ -110,8 +111,10 @@ always_ff begin : state_machine_outpus_sequintional_logic
 		msg_in.rdy 			<= 0;
 		key_and_sync.rdy	<= 0;
 		deliver_msg 		<= 0;
+		round_sync 			<= encrypted_sync;
+		encrypted_block		<= round_sync;
 
-		unique if (counnter == 1) begin
+		unique if (counter == 1) begin
 			round_sync <= msg_key^msg_sync;
 		end
 		else if(counter == 10)begin
@@ -123,20 +126,20 @@ always_ff begin : state_machine_outpus_sequintional_logic
 	end
 	else if (current_state == WAIT_FOR_MSG) begin// when the module finish creating the encrypted block he will wait for a msg to encrypit it and then he will go back to encryption(or to the statrt if msg has ended)
 		deliver_msg <=1;
+		counter <=0;
+		msg.rdy <= msg_out.rdy;
+
 	end	
 end
 
-always_comb begin : state_machine_outpus_combinational_logic 
-	msg_out.data 	<= msg_in.data^round_sync;
-	msg_out.rdy		<= msg_in.rdy;
-	msg_out.sop		<= msg_in.sop;
-	msg_out.eop 	<= msg_in.eop;
-	msg_out.empty 	<= msg_in.empty;
-	msg_in.valid 	<= msg_out.valid^deliver_msg;
-
-
-
-
-
-
+// handle with tje forwarding of the msg
+always_comb begin : sm_msg_handling
+	msg_out.data 	= msg_in.data^encrypted_block;
+	msg_out.rdy		= msg_in.rdy;
+	msg_out.sop		= msg_in.sop;
+	msg_out.eop 	= msg_in.eop;
+	msg_out.empty 	= msg_in.empty;
+	msg_in.valid 	= msg_out.valid^deliver_msg;
 end
+
+always_comb
