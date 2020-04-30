@@ -58,7 +58,7 @@ aes_encryptor_sm_t    									current_state; //the sm
 logic 													deliver_msg; // signals that control whether to deliver the msg on or not(depdent on whtever encrypted or not)
 int 													counter;
 logic 	[(DATA_WIDTH_IN_BYTES*$bits(byte)) - 1 : 0] 	msg_key,round_key, expanded_key;
-logic 	[(DATA_WIDTH_IN_BYTES*$bits(byte)) - 1 : 0] 	msg_sync,round_sync, encrypted_block; 
+logic 	[(DATA_WIDTH_IN_BYTES*$bits(byte)) - 1 : 0] 	msg_sync,round_sync, encrypted_block,encrypted_sync; 
 logic 	[(DATA_WIDTH_IN_BYTES*$bits(byte)) - 1 : 0] 	sasb,sasr,samc; // three help signals that represnt the sync after all the encrypting levels in round
 logic 	[3 : 0] [$bits(byte) - 1 : 0]					key_rcon;
 //////////////////////////////////////////
@@ -114,14 +114,14 @@ always_ff @(posedge clk ) begin : state_machine_outpus_sequintional_logic
 		round_sync 			<= encrypted_sync;
 		encrypted_block		<= round_sync;
 
-		// handling the spcail rounds(first round' and las round)
+		// handling the specail rounds(first round' and las round)
 		unique if (counter == 1) begin
 			round_sync <= msg_key^msg_sync; // at the "first" round just xoring the sync and key
 		end
 		else if(counter == 10)begin
 			round_sync <= round_key^sasr; // in the last round avoding the mix_col
 		end
-		else
+		else begin
 			round_sync <= round_key^round_sync; // regular round
 		end
 
@@ -136,8 +136,7 @@ always_ff @(posedge clk ) begin : state_machine_outpus_sequintional_logic
 		deliver_msg <=1;
 		counter <=0;
 		msg.rdy <= msg_out.rdy;
-
-	end	
+	end
 end
 
 
@@ -148,6 +147,7 @@ always_comb begin: encrypted_round
 	samc = mix_colums(sasr);
 	expanded_key = key_expand(round_key,key_rcon);
 	encrypted_sync = samc^expanded_key;
+end
 
 
 
@@ -162,4 +162,4 @@ always_comb begin : sm_msg_handling
 	msg_in.valid 	= msg_out.valid^deliver_msg;
 end
 
-always_comb
+endmodule 
