@@ -84,12 +84,13 @@ always_ff @(posedge clk or negedge rst) begin : state_machine_logic
 					end
 				end	
 				WAIT_FOR_MSG: begin //when we finshed encrytping and waiting for a msg to encrypt it
-					if (msg_in.valid & msg_out.rdy & msg_in.eop!) begin
+					if (msg_in.valid & msg_out.rdy & !msg_in.eop) begin
 						current_state <= ENCRYPTION_PROCESS;
 					end
 					else if (msg_in.eop & msg_out.rdy & msg_in.valid) begin
 						current_state <= WAIT_FOR_KEY_AND_SYNC;
 					end
+				end
 		endcase
 	end
 end
@@ -100,7 +101,7 @@ always_ff @(posedge clk ) begin : state_machine_outpus_sequintional_logic
 		key_and_sync.rdy 	<= 1;
 		counter 			<= 0;
 		deliver_msg 		<= 0;
-		msg_in.rdy 			<= 0
+		msg_in.rdy 			<= 0;
 		msg_sync 			<= key_and_sync.sync;
 		msg_key 			<= key_and_sync.key;
 	end	
@@ -126,11 +127,12 @@ always_ff @(posedge clk ) begin : state_machine_outpus_sequintional_logic
 
 		unique if (counter == 1) begin
 			round_key = msg_key;
-		else
+		end
+		else begin
 			round_key = expanded_key;
 		end
 	end
-	else if (current_state == WAIT_FOR_MSG) begin// when the module finish creating the encrypted block he will wait for a msg to encrypit it and then he will go back to encryption(or to the statrt if msg has ended)
+	else if(current_state == WAIT_FOR_MSG) begin // when the module finish creating the encrypted block he will wait for a msg to encrypit it and then he will go back to encryption(or to the statrt if msg has ended)
 		deliver_msg <=1;
 		counter <=0;
 		msg.rdy <= msg_out.rdy;
