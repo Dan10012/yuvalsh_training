@@ -18,7 +18,6 @@
 ///
 //////////////////////////////////////////////////////////////////
 
-import general_pack::*;
 
 interface dvr_key_if #(parameter DATA_WIDTH_IN_BYTES = 16);
 	logic 	[(DATA_WIDTH_IN_BYTES*$bits(byte)) - 1 : 0] key;
