@@ -1,7 +1,7 @@
 package aes_model_pack;
     /*-- Parameters --------------------------------*/
 
-	parameter DATA_WIDTH_IN_BYTES = 16 
+	parameter DATA_WIDTH_IN_BYTES = 16,
     
     /*-- Tables ------------------------------------*/
     // Sub Bytes.
@@ -37,6 +37,15 @@ package aes_model_pack;
         {8'h02, 8'h00, 8'h00, 8'h00},
         {8'h01, 8'h00, 8'h00, 8'h00}
     };
+
+// function the cahnges bytes in the order from the subbytes 16x16 table
+function logic subbytes (input logic sync [(DATA_WIDTH_IN_BYTES*$bits(byte)) - 1 : 0]);
+    logic temp[(DATA_WIDTH_IN_BYTES*$bits(byte)) - 1 : 0];
+    for (int i = 0; i < 128; i+8) begin
+        temp[i+7 : i] = SUB_BYTES_TABLE[int(sync[i+3 : i])] [int(sync[i+7 : i+4];
+    end
+    sync = temp;
+endfunction : 
 
   function logic shift_rows(input logic sync [(DATA_WIDTH_IN_BYTES*$bits(byte)) - 1 : 0]);
     logic [(DATA_WIDTH_IN_BYTES*$bits(byte)) - 1 : 0] temp;
@@ -116,26 +125,17 @@ function logic g_func (input logic key[(4*$bits(byte)) - 1 : 0], input logic rco
         temp[i+7 : i] = subbytes(temp[i+7 : i]);
     end
     sync = temp^rcon; // xoring in this round r_con
-    
 endfunction : 
 
 // the function that make the round key from the "old" key
-function logic key_expand (input logic key[(DATA_WIDTH_IN_BYTES*$bits(byte)) - 1 : 0]);
+function logic key_expand (input logic key[(DATA_WIDTH_IN_BYTES*$bits(byte)) - 1 : 0], input logic rcon[(4*$bits(byte)) - 1 : 0]);
     logic temp[(DATA_WIDTH_IN_BYTES*$bits(byte)) - 1 : 0];
     temp = key;
-    temp[127 : 96] = g_func(key[127 : 96]);
+    temp[127 : 96] = g_func(key[127 : 96] , rcon);
     key[31 : 0] = temp[127 : 96];
     for (int i = 32; i < 128; i+32) begin // xor each old w[i] with new w[i-1] in order to get new w[i]
-        key[i+31 : i] = key[i -32 : i -1]^temp[i+31 : i];
+        key[i+31 : i] = key[i-32 : i -1]^temp[i+31 : i];
     end
 endfunction : 
 
-// function the cahnges bytes in the order from the subbytes 16x16 table
-function logic subbytes (input logic sync [(DATA_WIDTH_IN_BYTES*$bits(byte)) - 1 : 0]);
-    logic temp[(DATA_WIDTH_IN_BYTES*$bits(byte)) - 1 : 0];
-    for (int i = 0; i < 128; i+8) begin
-        temp[i+7 : i] = SUB_BYTES_TABLE[int(sync[i+3 : i])] [int(sync[i+7 : i+4];
-    end
-    sync = temp;
-endfunction : 
 endpackage
