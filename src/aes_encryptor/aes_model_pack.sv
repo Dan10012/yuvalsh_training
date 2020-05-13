@@ -2,6 +2,7 @@ package aes_model_pack;
     /*-- Parameters --------------------------------*/
 
 	parameter DATA_WIDTH_IN_BYTES = 16;
+    typedef logic [(DATA_WIDTH_IN_BYTES*$bits(byte)) - 1 : 0] data_block;
     
     /*-- Tables ------------------------------------*/
     // Sub Bytes.
@@ -39,33 +40,33 @@ package aes_model_pack;
     };
 
     // function the cahnges bytes in the order from the subbytes 16x16 table
-  function logic subbytes (input logic sync [(DATA_WIDTH_IN_BYTES*$bits(byte)) - 1 : 0]);
-    logic temp[(DATA_WIDTH_IN_BYTES*$bits(byte)) - 1 : 0];
+  function data_block subbytes (input logic sync [(DATA_WIDTH_IN_BYTES*$bits(byte)) - 1 : 0]);
+    data_block temp;
     for (int i = 0; i < 128; i= i+8) begin
-        temp[i+7 : i] = SUB_BYTES_TABLE[int'(sync[i+3 : i])][int'(sync[i+7 : i+4])];
+        temp[i:+7] = SUB_BYTES_TABLE[int'(sync[i+3 : i])][int'(sync[i+7 : i+4])];
     end
-    sync = temp;
+    return temp;
   endfunction 
 
-  function logic shift_rows(input logic sync [(DATA_WIDTH_IN_BYTES*$bits(byte)) - 1 : 0]);
-    logic [(DATA_WIDTH_IN_BYTES*$bits(byte)) - 1 : 0] temp;
+  function data_block shift_rows(input logic sync [(DATA_WIDTH_IN_BYTES*$bits(byte)) - 1 : 0]);
+    data_block temp;
     // the first row the rows stat as is
-    temp[7 : 0]     = sync[7 : 0];
-    temp[39 :32 ]   = sync[39 : 32];
+    temp[7  : 0]     = sync[7 : 0];
+    temp[39 : 32 ]   = sync[39 : 32];
     temp[71 : 64]   = sync[71 : 64];
-    temp[103 : 96]  = sync[103 : 96];
+    temp[103: 96]  = sync[103 : 96];
 
     // the second row all the bytes are shifting one step to the left
     temp[15 : 8]     = sync[47 : 40];
-    temp[47 : 40]   = sync[79 : 72];
-    temp[79 : 72]   = sync[111 : 104];
-    temp[111 : 104]  = sync[15 : 8];
+    temp[47 : 40]    = sync[79 : 72];
+    temp[79 : 72]    = sync[111 : 104];
+    temp[111: 104]  = sync[15 : 8];
 
     // the third row all the bytes are shiting two steps to the left
 
-    temp[23 : 16]     = sync[87 : 80];
-    temp[55 : 48]   = sync[119 : 112];
-    temp[87 : 80]   = sync[23 : 16];
+    temp[23 : 16]    = sync[87 : 80];
+    temp[55 : 48]    = sync[119 : 112];
+    temp[87 : 80]    = sync[23 : 16];
     temp[119 : 112]  = sync[55 : 48];
 
     // the fourth row all the bytes are shifting three steps to the left
@@ -75,11 +76,11 @@ package aes_model_pack;
     temp[95 : 88]   = sync[63 : 56];
     temp[127: 120]  = sync[95 : 88];
 
-    sync = temp;
+    return temp;
 
   endfunction
     // a help func that doing a multipication of a byet in 02, used in order to get the mixcol
-      function logic vector_multi_by2(input logic w1[($bits(byte))-1 : 0]);
+      function logic[($bits(byte))-1 : 0] vector_multi_by2(input logic w1[($bits(byte))-1 : 0]);
         logic temp[($bits(byte))-1 : 0];
         logic overflow_keeper[($bits(byte))-1 : 0] = 00011011;// a variable that tou xor with the sum if the most left is 1
         for (int i = 0; i < 6; i++)begin//shifting all the bits one to the left an putting 0 at the most right
@@ -87,54 +88,59 @@ package aes_model_pack;
         end
         temp[7] = 0;
         if(w1[0] == 1)begin// if the most right is 1 we dealing with the overflow
-            sync = temp^overflow_keeper;
-        end
+            sync = temp^overflow_keeper; 
         else begin
             sync = temp;
         end
+        return sync;
       endfunction
     // a help func that doing a multipication of a byet in 03, used in order to get the mixcol
-      function logic vector_multi_by3(input logic w1[($bits(byte))-1 : 0]);
+      function logic[($bits(byte))-1 : 0] vector_multi_by3(input logic w1[($bits(byte))-1 : 0]);
         logic temp[($bits(byte))-1 : 0];
         temp = vector_multi_by2(w1);// multipication by 3 is acatually multipication by02 xor x.
         temp = temp^w1;
-
+        return temp;
       endfunction
 
-    function logic mix_colums (input logic sync [(DATA_WIDTH_IN_BYTES*$bits(byte)) - 1 : 0]);
-        logic [(DATA_WIDTH_IN_BYTES*$bits(byte)) - 1 : 0] temp;
+    function data_block mix_colums (input data_block sync);
+        logic [DATA_WIDTH_IN_BYTES][8] temp;
         // the vector multipication of each colum in the mixcol table
         for (int i = 0; i < 128; i = i+32) begin
-            temp[i+7 : i] = ((vector_multi_by2(sync[i+7 : i]))^vector_multi_by3(sync[i+15 : i+8]))^(sync[i+23 : i+16]^sync[i+31 : i+24]);
-            temp[i+15 : i+8] = (sync[i+7 : i]^vector_multi_by2(sync[i+15 : i+8]))^(vector_multi_by3(sync[i+23 : i+16]))^sync[i+31 : i+24];
-            sync[i+23 : i+16] = (sync[i+7 : i]^sync[i+15 : i+8])^((vector_multi_by2(sync[i+23 : i+16]))^vector_multi_by3(sync[i+31 : i+24]));
-            temp[i+31 : i+24] = (vector_multi_by3(sync[i+7 : i])^synci[i+15 : i+8])^(sync[i+23 : i+16]^vector_multi_by2(sync[i+31 : i+24]));
+            temp[i:+7] = ((vector_multi_by2(sync[i:+7]))^vector_multi_by3(sync[i+15 : i+8]))^(sync[i+23 : i+16]^sync[i+31 : i+24]);
+
+            temp[i+15 : i+8] = (sync[i:+7]^vector_multi_by2(sync[i+15 : i+8]))^(vector_multi_by3(sync[i+23 : i+16]))^sync[i+31 : i+24];
+            
+            sync[i+23 : i+16] = (sync[i:+7]^sync[i+15 : i+8])^((vector_multi_by2(sync[i+23 : i+16]))^vector_multi_by3(sync[i+31 : i+24]));
+            
+            temp[i+31 : i+24] = (vector_multi_by3(sync[i:+7])^synci[i+15 : i+8])^(sync[i+23 : i+16]^vector_multi_by2(sync[i+31 : i+24]));
         end
         sync = temp;
         
     endfunction 
 
     // a sub function that use in the key expand in order to get the new key first word
-    function logic g_func (input logic key[(4*$bits(byte)) - 1 : 0], input logic rcon[(4*$bits(byte)) - 1 : 0]);
-        logic temp[(4*$bits(byte)) - 1 : 0];
-        for (int i = 0; i < 32;i = i+8) begin// shifting th bytes one to the left
-            temp[i+7 : i] = key[i+15 : i+8];
+    function logic[(4*$bits(byte)) - 1 : 0] g_func (input logic key[(4*$bits(byte)) - 1 : 0], input int round_num);
+        logic [(4*$bits(byte)) - 1 : 0] temp;
+        for (int i = 0; i < 32;i = i+8) begin // shifting th bytes one to the left
+            temp[i:+7] = key[i+15 : i+8];
         end
         temp[31 : 24] = key[7 : 0];
-        for (int i = 0; i < 32; i = i+8) begin// changing the value using the subbytes func
-            temp[i+7 : i] = subbytes(temp[i+7 : i]);
+        for (int i = 0; i < 32; i = i+8) begin // changing the value using the subbytes func
+            temp[i:+7] = subbytes(temp[i:+7]);
         end
-        sync = temp^rcon; // xoring in this round r_con
+        sync = temp^RCON_TABLE[counter][3]^temp[31:0]]; // xoring in this round r_con
     endfunction 
 
     // the function that make the round key from the "old" key
-    function logic key_expand (input logic key[(DATA_WIDTH_IN_BYTES*$bits(byte)) - 1 : 0], input logic rcon[(4*$bits(byte)) - 1 : 0]);
-        logic temp[(DATA_WIDTH_IN_BYTES*$bits(byte)) - 1 : 0];
+    function data_block key_expand (input data_block key, input int round_num);
+        data_block temp;
+        int old_key = 0; 
         temp = key;
-        temp[127 : 96] = g_func(key[127 : 96] , rcon);
-        key[31 : 0] = temp[127 : 96];
-        for (int i = 32; i < 128;i =  i+32) begin // xor each old w[i] with new w[i-1] in order to get new w[i]
-            key[i+31 : i] = key[i-32 : i -1]^temp[i+31 : i];
+        key[127 : 96] = g_func(key[127 : 96] , round_num)^ temp[31:0];
+        for (int i = 64; i < 128;i =  i -32) begin // xor each old w[i] with new w[i-1] in order to get new w[i]
+            p_word = i+ 32;
+            key[i+ : 31] = key[p_word+:31 ]^temp[i+ : 31 ];
         end
+        return key;
     endfunction  
 endpackage
