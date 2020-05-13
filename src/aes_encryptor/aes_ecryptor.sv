@@ -29,7 +29,7 @@ module aes_encryptor
 
 	avalon_st_if.master  	msg_out, 
 	avalon_st_if.slave 		msg_in,
-	dvr_key_if.slave         key_and_sync,
+	dvr_key_if.slave        key_and_sync,
 
 	output logic double_sync
 
@@ -54,12 +54,12 @@ typedef enum logic { // setting up the sm states
 //////////////////////////////////////////
 //// Declarations ////////////////////////
 //////////////////////////////////////////
-aes_encryptor_sm_t    									current_state; //the sm
-logic 													deliver_msg; // signals that control whether to deliver the msg on or not(depdent on whtever encrypted or not)
-int 													counter;
-logic 	[(DATA_WIDTH_IN_BYTES*$bits(byte)) - 1 : 0] 	msg_key,round_key, expanded_key;
-logic 	[(DATA_WIDTH_IN_BYTES*$bits(byte)) - 1 : 0] 	msg_sync,round_sync, encrypted_block,encrypted_sync; 
-logic 	[(DATA_WIDTH_IN_BYTES*$bits(byte)) - 1 : 0] 	sasb,sasr,samc; // three help signals that represnt the sync after all the encrypting levels in round
+aes_encryptor_sm_t    current_state; //the sm
+logic 				  deliver_msg; // signals that control whether to deliver the msg on or not(depdent on whtever encrypted or not)
+int 			 	  counter;
+data_block 			  msg_key,round_key, expanded_key;
+data_block 			  msg_sync,round_sync, encrypted_block,encrypted_sync; 
+data_block 			  sasb,sasr,samc; // three help signals that represnt the sync after all the encrypting levels in round
 //////////////////////////////////////////
 //// Logic ///////////////////////////////
 //////////////////////////////////////////
