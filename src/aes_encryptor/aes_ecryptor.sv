@@ -60,7 +60,6 @@ int 													counter;
 logic 	[(DATA_WIDTH_IN_BYTES*$bits(byte)) - 1 : 0] 	msg_key,round_key, expanded_key;
 logic 	[(DATA_WIDTH_IN_BYTES*$bits(byte)) - 1 : 0] 	msg_sync,round_sync, encrypted_block,encrypted_sync; 
 logic 	[(DATA_WIDTH_IN_BYTES*$bits(byte)) - 1 : 0] 	sasb,sasr,samc; // three help signals that represnt the sync after all the encrypting levels in round
-logic 	[3 : 0] [$bits(byte) - 1 : 0]					key_rcon;
 //////////////////////////////////////////
 //// Logic ///////////////////////////////
 //////////////////////////////////////////
@@ -97,56 +96,51 @@ end
 
 // this process handles the outpus of the sm_signals 
 always_ff @(posedge clk ) begin : state_machine_outpus_sequintional_logic
-	unique if(current_state == WAIT_FOR_KEY_AND_SYNC) begin //when the module iwaiting for sync sn key he will shout down msg transefrecy and the rdy for key and sync will be up
+	case(current_state)
+	  WAIT_FOR_KEY_AND_SYNC: begin //when the module iwaiting for sync sn key he will shout down msg transefrecy and the rdy for key and sync will be up
 		key_and_sync.rdy 	<= 1;
 		counter 			<= 0;
 		deliver_msg 		<= 0;
 		msg_in.rdy 			<= 0;
 		msg_sync 			<= key_and_sync.sync;
 		msg_key 			<= key_and_sync.key;
+		round_sync			<= '0;
 	end	
-	else if(current_state == ENCRYPTION_PROCESS) begin // when the moudle is in the middle of encrypting he will block any new data(msg,sync,key) and will track on the encrypting rounds.
+	 ENCRYPTION_PROCESS : begin // when the moudle is in the middle of encrypting he will block any new data(msg,sync,key) and will track on the encrypting rounds.
 		counter				<= counter +1;
-		key_rcon 			<= RCON_TABLE[counter][3:0];
 		msg_in.rdy 			<= 0;
 		key_and_sync.rdy	<= 0;
 		deliver_msg 		<= 0;
-		round_sync 			<= encrypted_sync;
 		encrypted_block		<= round_sync;
 
 		// handling the specail rounds(first round' and las round)
-		unique if (counter == 1) begin
-			round_sync <= msg_key^msg_sync; // at the "first" round just xoring the sync and key
-		end
-		else if(counter == 10)begin
-			round_sync <= round_key^sasr; // in the last round avoding the mix_col
+		if(counter == 0) begin
+			round_sync  <= msg_key^msg_sync; // at the "first" round just xoring the sync and key
+			round_key	<= msg_key;
 		end
 		else begin
-			round_sync <= round_key^round_sync; // regular round
+			round_key <= expanded_key;
+		 	if(counter == 10)begin
+				round_sync <= round_key^sasr; // in the last round avoding the mix_col
+			end
+			else begin
+				round_sync <= encrypted_sync; // regular round
+			end
 		end
-
-		unique if (counter == 1) begin
-			round_key = msg_key;
-		end
-		else begin
-			round_key = expanded_key;
-		end
-	end
-	else if(current_state == WAIT_FOR_MSG) begin // when the module finish creating the encrypted block he will wait for a msg to encrypit it and then he will go back to encryption(or to the statrt if msg has ended)
+	  WAIT_FOR_MSG :begin // when the module finish creating the encrypted block he will wait for a msg to encrypit it and then he will go back to encryption(or to the statrt if msg has ended)
 		deliver_msg <=1;
 		counter <=0;
 		msg.rdy <= msg_out.rdy;
-	end
+	  end
+    endcase // current_state
 end
 
-
 // the encrypted_round module
-always_comb begin: encrypted_round
-	sasb = subbytes(round_sync);
-	sasr = shift_rows(sasb);
-	samc = mix_colums(sasr);
-	expanded_key = key_expand(round_key,key_rcon);
-	encrypted_sync = samc^expanded_key;
+assign	sasb	 	   = rst? '0: subbytes(round_sync);
+assign	sasr 		   = rst? '0: shift_rows(sasb);
+assign	samc 		   = rst? '0: mix_colums(sasr);
+assign	expanded_key   = rst? '0: key_expand(round_key,counter);
+assign	encrypted_sync = rst? '0: samc^expanded_key;
 end
 
 
