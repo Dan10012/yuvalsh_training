@@ -52,7 +52,7 @@ class serial_data_converter_reference_model extends uvm_component;
      $display("counter",counter);
 
     if (counter =< 7 & !send_data) begin
-        sync[(8*counter)-1 -: 7] = item.Data;
+        sync[(8*counter)-1 -: 8] = item.Data;
     end
     else if(!send_data) begin
         case (sync)

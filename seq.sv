@@ -68,7 +68,7 @@ class serial_data_converter_data_in_sequence extends uvm_sequence #(dvr_sequence
       std::randomize(num1)with {10000> num1; num1 >1000;}; //randoming how many bytes before the sync
         
         for (int i = 0; i < 7; i++) begin// inserting the sync to the packet
-          data_in_bytes.insert(0, sync1[(8*(i+1))-1 -: 7]);   
+          data_in_bytes.insert(0, sync1[(8*(i+1))-1 -: 8]);   
         end
       
         for (int i = 0; i < num1; i++) begin
@@ -80,10 +80,10 @@ class serial_data_converter_data_in_sequence extends uvm_sequence #(dvr_sequence
       std::randomize(sync2)with{ sync2 dist {'hdead0deaf0beef:=5, 'h299123:=9, 'h52f3752:=4, 'h7b4753ff0f0:=3};}; // randomizing another sync from the options  
       
       for (int i = 0; i < 7; i++) begin// inserting the sync in the last bits of any optionoal sync
-        data_in_bytes.insert(521, sync2[(8*(i+1))-1 -: 7]);
-        data_in_bytes.insert(499, sync2[(8*(i+1))-1 -: 7]);
-        data_in_bytes.insert(858, sync2[(8*(i+1))-1 -: 7]);
-        data_in_bytes.insert(964, sync2[(8*(i+1))-1 -: 7]);
+        data_in_bytes.insert(521, sync2[(8*(i+1))-1 -: 8]);
+        data_in_bytes.insert(499, sync2[(8*(i+1))-1 -: 8]);
+        data_in_bytes.insert(858, sync2[(8*(i+1))-1 -: 8]);
+        data_in_bytes.insert(964, sync2[(8*(i+1))-1 -: 8]);
       end
 
         send_msg(data_in_bytes);
