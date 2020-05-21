@@ -40,9 +40,41 @@ class serial_data_converter_reference_model extends uvm_component;
     /*-------------------------------------------------------------------------------
     -- in_stream Write Function.
     -------------------------------------------------------------------------------*/
-  
+    
+
     function void write_in_stream_port (serial_data_converter_in_stream_item_type item = null);
-		/* putyour code here */
+	bit [55:0] temp;
+    static bit[55:0] sync; 
+    static int  bytes_to_send,counter = 0;
+    static bit send_data;
+
+    counter = counetr + 1;
+     $display("counter",counter);
+
+    if (counter =< 7 & !send_data) begin
+        sync[(8*counter)-1 -: 7] = item.Data;
+    end
+    else if(!send_data) begin
+        case (sync)
+            'hdead0deaf0beef: begin 
+                send_data = 1'b1;
+                bytes_to_send = 966;
+            end 
+            'h299123: begin
+                send_data = 1'b1;
+                bytes_to_send = 501;
+            end
+            'h52f3752: begin
+                send_data = 1'b1;
+                bytes_to_send = 523;
+            end
+            'h7b4753ff0f0: begin
+                send_data = 1'b1;
+                bytes_to_send = 860;
+            default : send_data =1'b0;;
+            endcase
+
+ 
     endfunction
 
     /*-------------------------------------------------------------------------------
